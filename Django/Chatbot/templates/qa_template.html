@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>챗봇</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+    <div class="chat-container">
+        <h1>챗봇에게 질문하세요</h1>
+
+        <form method="POST" action="{% url 'qa_process' %}" class="chat-box" onsubmit="showLoading()">
+            {% csrf_token %}
+            <div class="input-container">
+                <i class="fas fa-question-circle"></i>
+                <input type="text" id="question_input" name="question_input" placeholder="질문을 입력하세요" required="required">
+            </div>
+            <button type="submit">질문하기</button>
+            <button type="button" onclick="startVoiceInput()">음성 입력</button>
+        </form>
+
+        <div id="loading">
+            <div class="loading-content">
+                <p>생각하고 있어요...</p>
+                <div class="loader"></div>
+            </div>
+        </div>
+
+        <div class="chat-content">
+            <div class="chatbot-response">
+                <h2>챗봇의 답변</h2>
+                {% if results %}
+                    {% if show_cards %}
+                        {% for result in results %}
+                            {% if result.thumbnail_url and result.lecture_title and result.lecture_summary %}
+                                {% include 'lecture_card.html' with thumbnail_url=result.thumbnail_url lecture_title=result.lecture_title lecture_summary=result.lecture_summary %}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="chat-message">
+                            <p>{{ results.0 }}</p>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="chat-history">
+                <h2>채팅 기록</h2>
+                {% for entry in chat_history %}
+                    <div class="chat-message">
+                        <p>
+                            <strong>사용자:</strong>
+                            {{ entry.question }}
+                            <small>{{ entry.timestamp }}</small>
+                        </p>
+                        <p>
+                            <strong>챗봇:</strong>
+                            {{ entry.answer }}
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="button" class="clear-history-button" onclick="clearHistory()">채팅 기록 삭제</button>
+
+        <div class="team-info">
+            <i class="fas fa-users"></i>
+            <span>팀 프로젝트: 질문 답변 시스템</span>
+        </div>
+
+        <!-- 추천 키워드 목록 추가 -->
+        <div>
+            <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;검색 가능 단어</h3>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                {% if keywords %}
+                    {{ keywords|join:", " }}  <!-- 쉼표로 구분해서 키워드 출력 -->
+                {% else %}
+                    키워드가 없습니다
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex'; // 로딩 스피너 표시
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none'; // 로딩 스피너 숨김
+        }
+
+        function startVoiceInput() {
+            var recognition = new webkitSpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.start();
+
+            recognition.onresult = function (event) {
+                var question = event.results[0][0].transcript;
+                document.getElementById('question_input').value = question;
+                document.querySelector('form').submit();
+            };
+        }
+
+        function clearHistory() {
+            if (confirm('채팅 히스토리를 정말 삭제하시겠습니까?')) {
+                window.location.href = "{% url 'clear_history' %}";
+            }
+        }
+    </script>
+</body>
+
+</html>

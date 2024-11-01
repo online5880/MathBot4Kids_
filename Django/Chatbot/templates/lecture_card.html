@@ -1,0 +1,16 @@
+{% load custom_filters %}
+
+<div class="lecture-card">
+  <h3 class="lecture-title">{{ lecture_title }}</h3>
+  <div class="content-container">
+    <div class="thumbnail-container">
+      <img src="{{ thumbnail_url }}" alt="{{ lecture_title }} 썸네일" class="thumbnail"/>
+    </div>
+    <p class="lecture-summary">
+      <strong>요약:</strong><br/>
+      {% for item in lecture_summary|to_list %}
+        {{ item|strip_spaces }}<br/>  {# 수동으로 추가된 - 제거 #}
+      {% endfor %}
+    </p>
+  </div>
+</div>
