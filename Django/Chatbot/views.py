@@ -1,24 +1,26 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.db.models import Q
-import numpy as np
+from django.apps import apps
+from django.core.cache import cache
+from dotenv import load_dotenv
 from .models import Lecture, Keyword
 from konlpy.tag import Okt
-import pytz
 from .stopwords import STOP_WORDS, JOSA, PUNCTUATION, COMPOUND_NOUNS
+from langchain_openai import ChatOpenAI
+from langchain_community.utils.math import cosine_similarity
+from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
+from langchain_community.retrievers import TFIDFRetriever
+import numpy as np
+import pytz
 import time
 import os
-from django.core.cache import cache
 import hashlib
-from langchain_community.utils.math import cosine_similarity
-from django.apps import apps
-from langchain_openai import ChatOpenAI
-from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
-from dotenv import load_dotenv
-from langchain_community.retrievers import TFIDFRetriever
 
+# env 불러오기
 load_dotenv()
 
+# 임베딩
 def embed_question_with_huggingface(question):
     embeddings = apps.get_app_config('Chatbot').embeddings
     if embeddings is None:
@@ -207,8 +209,12 @@ def qa_process(request):
 
     if request.method == "POST":
         question = request.POST.get("question_input")
-        print(f"질문: {question}")
         results = chatbot_response(question)
+        
+        chatbot_config = apps.get_app_config('Chatbot')
+        retriever = chatbot_config.retriever
+        
+        print(retriever.invoke("{question}"))
 
         kst = pytz.timezone("Asia/Seoul")
         current_time = timezone.now().astimezone(kst).strftime("%Y-%m-%d %H:%M:%S")
